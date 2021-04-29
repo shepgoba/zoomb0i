@@ -1,0 +1,1257 @@
+/*
+	uint8_t n1 = ((instruction & 0xf0000000) >> 28);
+	uint8_t n2 = ((instruction & 0x0f000000) >> 24);
+
+	switch (n1) {
+		case 0x0: {
+			switch (n2) {
+				case 0x0: {
+					// nop
+					break;
+				}
+				case 0x1: {
+					//confirmed good
+					//*cpu->bc = immw;
+					uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+					*cpu->bc = immw;
+					break;
+				}
+				case 0x2: {
+					//confirmed good
+					//queue_task
+					//attempt_write(cpu, cpu->address_space +  *cpu->bc, &cpu->a);
+					gb_write(cpu, *cpu->bc, cpu->a, 1);
+					break;
+				}
+				case 0x3: {
+					//confirmed good
+					(*cpu->bc)++;
+					
+					break;
+				}
+				case 0x4: {
+					set_flag(cpu, H_FLAG, (cpu->b++ & 0xf) == 0xf);
+					
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, Z_FLAG, cpu->b == 0);
+					break;
+				}
+				case 0x5: {
+					set_flag(cpu, H_FLAG, (--cpu->b & 0xf) == 0xf);
+	
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, Z_FLAG, cpu->b == 0);
+					break;
+				}
+				case 0x6: {
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->b = immb;
+					break;
+				}
+				case 0x7: {
+					//confirmed good
+					bool bit = get_bit_on(cpu->a, 7);
+					set_flag(cpu, C_FLAG, bit);
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, H_FLAG, 0);
+					cpu->a <<= 1;
+					cpu->a |= bit;
+					set_flag(cpu, Z_FLAG, 0);
+					break;
+				}
+				case 0x8: {
+					//confirmed good (possible endianness)
+					uint8_t b1 = (cpu->sp >> 8) & 0xff;
+					uint8_t b2 = cpu->sp & 0xff;
+
+					uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+
+					gb_write(cpu, immw + 1, b1, 1);
+					gb_write(cpu, immw, b2, 1);
+					break;
+				}
+				case 0x9: {
+					//probably good
+					uint32_t val = (*cpu->hl + *cpu->bc);
+					set_flag(cpu, C_FLAG, (val & 0x10000) == 0x10000);
+					set_flag(cpu, H_FLAG, (((*cpu->hl & 0xfff) + (*cpu->bc & 0xfff)) & 0x1000) == 0x1000);
+
+					*cpu->hl = val & 0xffff;
+
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, N_FLAG, 0);
+					break;
+				}
+				case 0xA: {
+					//confirmed good
+					//cpu->a = cpu->addressSpace[*cpu->bc];
+					cpu->a = gb_read(cpu, *cpu->bc);
+
+					break;
+				}
+				case 0xB: {
+					//confirmed good
+					(*cpu->bc)--;
+					break;
+				}
+				case 0xC: {
+					//confirmed good (possible h flag)
+					set_flag(cpu, H_FLAG, (cpu->c++ & 0xf) == 0xf);
+
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, Z_FLAG, cpu->c == 0);
+					break;
+				}
+				case 0xD: {
+					//confirmed good (possible h flag)
+					set_flag(cpu, H_FLAG, (--cpu->c & 0xf) == 0xf);
+
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, Z_FLAG, cpu->c == 0);
+					break;
+				}
+				case 0xE: {
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->c = immb;
+					break;
+				}
+				case 0xF: {
+					//confirmed good
+					bool bit = get_bit_on(cpu->a, 0);
+					set_flag(cpu, C_FLAG, bit);
+					set_flag(cpu, H_FLAG, 0);
+					set_flag(cpu, N_FLAG, 0);
+					cpu->a >>= 1;
+					cpu->a |= bit << 7;
+					set_flag(cpu, Z_FLAG, 0);
+					break;
+					
+				}
+			}
+			break;
+		}
+		case 0x1: {
+			switch (n2) {
+				case 0x0: {
+					//confirmed good
+					cpu->mode = 2;
+					break;
+				}
+				case 0x1: {
+					//confirmed good
+					uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+					*cpu->de = immw;
+					break;
+				}
+				case 0x2: {
+					//confirmed good
+
+					gb_write(cpu, *cpu->de, cpu->a, 1);
+					break;
+				}
+				case 0x3: {
+					//confirmed good
+					(*cpu->de)++;
+					break;
+				}
+				case 0x4: {
+					//confirmed good (possible h flag)
+					if ((cpu->d++ & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+					
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, Z_FLAG, cpu->d == 0);
+					break;
+				}
+				case 0x5: {
+					//confirmed good (possible h flag)
+					if ((--cpu->d & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+					
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, Z_FLAG, cpu->d == 0);
+					break;
+				}
+				case 0x6: {
+					//confirmed good
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->d = immb;
+					break;
+				}
+				case 0x7: {
+					//confirmed good
+					bool bit = get_bit_on(cpu->a, 7);
+					bool newBit = get_flag_on(cpu, C_FLAG);
+					set_flag(cpu, C_FLAG, bit);
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, H_FLAG, 0);
+					cpu->a <<= 1;
+					cpu->a |= newBit;
+					set_flag(cpu, Z_FLAG, 0);
+					break;
+				}
+				case 0x8: {
+					//confirmed good
+					int8_t simmb = ((instruction & 0x00ff0000) >> 16);
+					cpu->pc += simmb;
+					break;
+				}
+				case 0x9: {
+					//confirmed good (possible h flag)
+					uint32_t val = (*cpu->hl + *cpu->de);
+					set_flag(cpu, C_FLAG, (val & 0x10000) == 0x10000);
+					set_flag(cpu, H_FLAG, (((*cpu->hl & 0xfff) + (*cpu->de & 0xfff)) & 0x1000) == 0x1000);
+
+					*cpu->hl = val & 0xffff;
+
+					set_flag(cpu, N_FLAG, 0);
+					break;
+				}
+				case 0xA: {
+					//confirmed good
+					cpu->a = gb_read(cpu, *cpu->de);//*(cpu->address_space +  *cpu->de);
+					break;
+				}
+				case 0xB: {
+					//confirmed good
+					(*cpu->de)--;
+					break;
+				}
+				case 0xC: {
+					//confirmed good (possible h flag)
+					if ((cpu->e++ & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+					
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, Z_FLAG, cpu->e == 0);
+					
+					break;
+				}
+				case 0xD: {
+					//confirmed good (possible h flag)
+					if ((--cpu->e & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+					
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, Z_FLAG, cpu->e == 0);
+					break;
+				}
+				case 0xE: {
+					//confirmed good
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->e = immb;
+					break;
+				}
+				case 0xF: {
+					//confirmed good
+					bool bit = get_flag_on(cpu, C_FLAG);
+					set_flag(cpu, C_FLAG, get_bit_on(cpu->a, 0));
+					set_flag(cpu, H_FLAG, 0);
+					set_flag(cpu, N_FLAG, 0);
+					cpu->a >>= 1;
+					cpu->a |= bit << 7;
+					set_flag(cpu, Z_FLAG, 0);
+				}
+			}
+			break;
+		}
+		case 0x2: {
+			switch (n2) {
+				case 0x0: {
+					//confirmed good
+					if (!get_flag_on(cpu, Z_FLAG)) {
+						int8_t simmb = ((instruction & 0x00ff0000) >> 16);
+						cpu->pc += simmb;
+						cpu->instruction_wait_cycles = 12;
+					} else {
+						cpu->instruction_wait_cycles = 8;
+					}
+
+					break;
+				}
+				case 0x1: {
+					//confirmed good
+					uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+					*cpu->hl = immw;
+					break;
+				}
+				case 0x2: {
+					//confirmed good
+					gb_write(cpu, *cpu->hl, cpu->a, 1);
+					(*cpu->hl)++;
+					break;
+				}
+				case 0x3: {
+					//confirmed good
+					(*cpu->hl)++;
+					break;
+				}
+				case 0x4: {
+					//confirmed good (h)
+					if ((cpu->h++ & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+					
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, Z_FLAG, cpu->h == 0);
+					break;
+				}
+				case 0x5: {
+					//confirmed good (h)
+					if ((--cpu->h & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+					
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, Z_FLAG, cpu->h == 0);
+					break;
+				}
+				case 0x6: {
+					//confirmed good
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->h = immb;
+					break;
+				}
+				case 0x7: {
+					if (get_flag_on(cpu, N_FLAG)) {
+						// subtraction
+						if (get_flag_on(cpu, C_FLAG)) {
+							cpu->a -= 0x60;
+						}
+						if (get_flag_on(cpu, H_FLAG)) {
+							cpu->a -= 0x6;
+						}
+					} else {
+						// addition
+						if (get_flag_on(cpu, C_FLAG) || cpu->a > 0x99) {
+
+							cpu->a += 0x60;
+							set_flag(cpu, C_FLAG, 1);
+						}
+						if (get_flag_on(cpu, H_FLAG) || (cpu->a & 0xf) > 0x9) {
+							cpu->a += 0x6;
+						}
+					}
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					set_flag(cpu, H_FLAG, 0);
+					break;
+				}
+				case 0x8: {
+					//confirmed good
+					if (get_flag_on(cpu, Z_FLAG)) {
+						int8_t simmb = ((instruction & 0x00ff0000) >> 16);
+						cpu->pc += simmb;
+						cpu->instruction_wait_cycles = 12;
+					} else {
+						cpu->instruction_wait_cycles = 8;
+					}
+						
+					break;
+				}
+				case 0x9: {
+					//confirmed good probably (flags)
+					uint32_t val = (*cpu->hl + *cpu->hl);
+					set_flag(cpu, C_FLAG, (val & 0x10000) == 0x10000);
+					set_flag(cpu, H_FLAG, (((*cpu->hl & 0xfff) + (*cpu->hl & 0xfff)) & 0x1000) == 0x1000);
+
+					*cpu->hl = val & 0xffff;
+
+					set_flag(cpu, N_FLAG, 0);
+					break;
+				}//0000 1000 0000 0000
+				case 0xA: {
+					//confirmed good
+					cpu->a = gb_read(cpu, *cpu->hl);//cpu->addressSpace[*cpu->hl];
+					(*cpu->hl)++;
+					break;
+				}
+				case 0xB: {
+					//confirmed good
+					(*cpu->hl)--;
+					break;
+				}
+				case 0xC: {
+					//confirmed good (h)
+					if ((cpu->l++ & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+					
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, Z_FLAG, cpu->l == 0);
+					break;
+				}
+				case 0xD: {
+					//confirmed good (h)
+					if ((--cpu->l & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+					
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, Z_FLAG, cpu->l == 0);
+					break;
+				}
+				case 0xE: {
+					//confirmed good
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->l = immb;
+					break;
+				}
+				case 0xF: {
+					//confirmed good
+					cpu->a = ~cpu->a;
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, H_FLAG, 1);
+					break;
+				}
+			}
+			break;
+		}
+		case 0x3: {
+			switch (n2) {
+				case 0x0: {
+					//confirmed good
+					if (!get_flag_on(cpu, C_FLAG)) {
+						int8_t simmb = ((instruction & 0x00ff0000) >> 16);
+						cpu->pc += simmb;
+						cpu->instruction_wait_cycles = 12;
+					} else {
+						cpu->instruction_wait_cycles = 8;
+					}
+
+					break;
+				}
+				case 0x1: {
+					//confirmed good
+					uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+					cpu->sp = immw;
+					break;
+				}
+				case 0x2: {
+					//confirmed good
+					//attempt_write(cpu, cpu->address_space +  *cpu->hl, &cpu->a);
+					gb_write(cpu, *cpu->hl, cpu->a, 1);
+					(*cpu->hl)--;
+					break;
+				}
+				case 0x3: {
+					//confirmed good
+					cpu->sp++;
+					break;
+				}
+				case 0x4: {
+					//confirmed good (h)
+					if ((( cpu->address_space[*cpu->hl] )++ & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, Z_FLAG, gb_read(cpu, *cpu->hl) == 0);
+					break;
+				}
+				case 0x5: {
+					//confirmed good (h)
+					if ((--(cpu->address_space[*cpu->hl]) & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, Z_FLAG, gb_read(cpu, *cpu->hl) == 0);
+					break;
+				}
+				case 0x6: {
+					//confirmed good
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					gb_write(cpu, *cpu->hl, immb, 1);
+					break;
+				}
+				case 0x7: {
+					//confirmed good
+					set_flag(cpu, C_FLAG, 1);
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, H_FLAG, 0);
+					break;
+				}
+				case 0x8: {
+					//confirmed good
+					if (get_flag_on(cpu, C_FLAG)) {
+						int8_t simmb = ((instruction & 0x00ff0000) >> 16);
+						cpu->pc += simmb;
+						cpu->instruction_wait_cycles = 12;
+					} else {
+						cpu->instruction_wait_cycles = 8;
+					}
+						
+					break;
+				}
+				case 0x9: {
+					//confirmed good (flags maybe)
+					uint32_t val = (*cpu->hl + cpu->sp);
+					set_flag(cpu, C_FLAG, (val & 0x10000) == 0x10000);
+					set_flag(cpu, H_FLAG, (((*cpu->hl & 0xfff) + (cpu->sp & 0xfff)) & 0x1000) == 0x1000);
+
+					*cpu->hl = val & 0xffff;
+
+					set_flag(cpu, N_FLAG, 0);
+					break;
+				}
+				case 0xA: {
+					//confirmed good
+					cpu->a = gb_read(cpu, *cpu->hl);//cpu->addressSpace[*cpu->hl];
+					(*cpu->hl)--;
+					break;
+				}
+				case 0xB: {
+					//confirmed good
+					cpu->sp--;
+
+					break;
+				}
+				case 0xC: {
+					//confirmed good (flags)
+					if ((cpu->a++ & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					break;
+				}
+				case 0xD: {
+					//confirmed good (FLAGS)
+					if ((--cpu->a & 0xf) == 0xf)
+						set_flag(cpu, H_FLAG, 1);
+					else
+						set_flag(cpu, H_FLAG, 0);
+
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					break;
+				}
+				case 0xE: {
+					//confirmed good
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->a = immb;
+					break;
+				}
+				case 0xF: {
+					//confirmed good
+					set_flag(cpu, C_FLAG, !get_flag_on(cpu, C_FLAG));
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, H_FLAG, 0);
+					break;
+				}
+			}
+			break;
+		}
+		case 0x4:
+		case 0x5:
+		case 0x6:
+		case 0x7: {
+			//confirmed good
+			if (n1 == 0x7 && n2 == 0x6) {
+				_halt(cpu);
+				break;
+			}
+			uint8_t reg1index = (n1 - 0x4) * 2;
+			if (n2 > 0x7)
+				reg1index++;
+
+			uint8_t *reg1, *reg2;
+			if (reg1index == 6) {
+				reg1 = NULL;
+			} else {
+				reg1 = cpu->registers[reg1index];
+			}
+
+			uint8_t reg2index = n2 % 8;
+			if (reg2index == 6) {
+				reg2 = NULL;
+			} else {
+				reg2 = cpu->registers[reg2index];
+			}
+
+			if (reg1index == 6) {
+				gb_write(cpu, *cpu->hl, *reg2, 1);
+				break;
+			}
+			if (reg2index == 6) {
+				*reg1 = gb_read(cpu, *cpu->hl);
+				break;
+			}
+			*reg1 = *reg2;
+
+			break;
+		}
+		
+		case 0x8: {
+			//confirmed good possibly flags
+			uint8_t *reg = cpu->registers[n2 % 8];
+			
+			if (n2 < 0x8) {
+				uint16_t val;
+				if (n2 % 8 == 6) {
+					uint8_t memVal = gb_read(cpu, *cpu->hl);
+					val = cpu->a + memVal;
+					set_flag(cpu, C_FLAG, (val & 0x100) == 0x100);
+					set_flag(cpu, H_FLAG, (((cpu->a & 0xf) + (memVal & 0xf)) & 0x10) == 0x10);
+				} else {
+					uint8_t memVal = *reg;
+					val = cpu->a + memVal;
+					set_flag(cpu, C_FLAG, (val & 0x100) == 0x100);
+					set_flag(cpu, H_FLAG, (((cpu->a & 0xf) + (memVal & 0xf)) & 0x10) == 0x10);
+				}
+				cpu->a = val & 0xff;
+			} else {
+				uint16_t val;
+				uint8_t memVal;
+				if (n2 % 8 == 6) {
+					memVal = gb_read(cpu, *cpu->hl);
+				} else {
+					memVal = *reg;
+				}
+				val = cpu->a + memVal + get_flag_on(cpu, C_FLAG);
+				uint8_t low_nibble_a = cpu->a & 0xf;
+				uint8_t low_nibble_nc = memVal & 0xf;
+				set_flag(cpu, H_FLAG, (((low_nibble_a + low_nibble_nc + get_flag_on(cpu, C_FLAG)) & 0x10)) == 0x10);
+				set_flag(cpu, C_FLAG, (val & 0x100) == 0x100);
+				cpu->a = val & 0xff;
+			}
+			set_flag(cpu, N_FLAG, 0);
+			set_flag(cpu, Z_FLAG, cpu->a == 0);
+			break;
+		}
+
+		case 0x9: {
+
+			//confirmed good possibly flags
+			uint8_t *reg = cpu->registers[n2 % 8];
+			
+			if (n2 < 0x8) {
+				uint16_t val;
+				if (n2 % 8 == 6) {
+					uint8_t memVal = gb_read(cpu, *cpu->hl);
+					val = cpu->a - memVal;
+					set_flag(cpu, C_FLAG, cpu->a < memVal);
+					set_flag(cpu, H_FLAG, ((cpu->a & 0xf) - (memVal & 0xf)) < 0);
+				} else {
+					val = cpu->a - *reg;
+					set_flag(cpu, C_FLAG, cpu->a < *reg);
+					set_flag(cpu, H_FLAG, ((cpu->a & 0xf) - (*reg & 0xf)) < 0);
+				}
+				cpu->a = val & 0xff;
+			} else {
+				uint16_t nc;
+				if (n2 % 8 == 6) {
+					nc = gb_read(cpu, *cpu->hl) + get_flag_on(cpu, C_FLAG);
+				} else {
+					nc = *reg + get_flag_on(cpu, C_FLAG);
+				}
+
+				uint16_t val = cpu->a - nc;
+				set_flag(cpu, H_FLAG, ((cpu->a & 0xf) - (val & 0xf) - get_flag_on(cpu, C_FLAG)) < 0);
+				set_flag(cpu, C_FLAG, cpu->a < nc);
+				cpu->a = val & 0xff;
+			}
+
+			set_flag(cpu, N_FLAG, 1);
+			set_flag(cpu, Z_FLAG, cpu->a == 0);
+			break;
+		}
+		case 0xA: {
+			//confirmed good
+			uint8_t *reg = cpu->registers[n2 % 8];
+			
+			if (n2 < 0x8) {
+				set_flag(cpu, H_FLAG, 1);
+				if (n2 % 8 == 0x6) {
+					cpu->a &= gb_read(cpu, *cpu->hl);
+				} else {
+					cpu->a &= *reg;
+				}
+			} else {
+				set_flag(cpu, H_FLAG, 0);
+				if (n2 % 8 == 0x6) {
+					cpu->a ^= gb_read(cpu, *cpu->hl);
+				} else {
+					cpu->a ^= *reg;
+				}
+			}
+			
+			set_flag(cpu, Z_FLAG, cpu->a == 0);
+			set_flag(cpu, N_FLAG, 0);
+			set_flag(cpu, C_FLAG, 0);
+			break;
+		}
+		case 0xB: {
+			//confirmed good
+			uint8_t *reg = cpu->registers[n2 % 8];
+			
+			if (n2 < 0x8) {
+				set_flag(cpu, N_FLAG, 0);
+				set_flag(cpu, H_FLAG, 0);
+				set_flag(cpu, C_FLAG, 0);
+
+				uint8_t val;
+				if (n2 % 8 == 6)
+					val = gb_read(cpu, *cpu->hl);
+				else
+					val = *reg;
+
+				cpu->a |= val;
+				set_flag(cpu, Z_FLAG, cpu->a == 0);
+			} else {
+				uint8_t val;
+				if (n2 % 8 == 6)
+					val = gb_read(cpu, *cpu->hl);
+				else
+					val = *reg;
+
+				if ((cpu->a & 0xf) < (val & 0xf))
+					set_flag(cpu, H_FLAG, 1);
+				else
+					set_flag(cpu, H_FLAG, 0);
+
+				if (cpu->a < val)
+					set_flag(cpu, C_FLAG, 1);
+				else
+					set_flag(cpu, C_FLAG, 0);
+
+				set_flag(cpu, Z_FLAG, cpu->a == val);
+				set_flag(cpu, N_FLAG, 1);
+			}
+			break;
+		}
+		case 0xC: {
+			
+			switch (n2) {
+				case 0x0: {
+					//confirmed good
+					if (!get_flag_on(cpu, Z_FLAG)) {
+						_ret(cpu);
+						cpu->instruction_wait_cycles = 20;
+					} else {
+						cpu->instruction_wait_cycles = 8;
+					}
+
+					break;
+				}
+				case 0x1: {
+					//confirmed good
+					_pop(cpu, cpu->bc);
+					break;
+				}
+				case 0x2: {
+					//confirmed good
+					if (!get_flag_on(cpu, Z_FLAG)) {
+						uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+						cpu->pc = immw;
+						cpu->instruction_wait_cycles = 16;
+					} else {
+						cpu->instruction_wait_cycles = 12;
+					}
+						
+					break;
+				}
+				case 0x3: {
+					//confirmed good
+					uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+					cpu->pc = immw;
+					break;
+				}
+				case 0x4: {
+					//confirmed good
+					if (!get_flag_on(cpu, Z_FLAG)) {
+						_push(cpu, &cpu->pc);
+						uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+						cpu->pc = immw;
+						cpu->instruction_wait_cycles = 24;
+					} else {
+						cpu->instruction_wait_cycles = 12;
+					}
+
+					break;
+				}
+				case 0x5: {
+					//confirmed good
+					_push(cpu, cpu->bc);
+					break;
+				}
+				case 0x6: {
+					//confirmed good (possible flags)
+					//uint16_t val = cpu->a + imm1;
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					uint16_t val = cpu->a + immb;
+					set_flag(cpu, C_FLAG, (val & 0x100) == 0x100);
+					set_flag(cpu, H_FLAG, (((cpu->a & 0xf) + (immb & 0xf)) & 0x10) == 0x10);
+					cpu->a = val & 0xff;
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					break;
+				}
+				case 0x7: {
+					//confirmed good
+					_push(cpu, &cpu->pc);
+					cpu->pc = 0;
+					break;
+				}
+				case 0x8: {
+					//confirmed good
+					if (get_flag_on(cpu, Z_FLAG)) {
+						_ret(cpu);
+						cpu->instruction_wait_cycles = 20;
+					} else {
+						cpu->instruction_wait_cycles = 8;
+					}
+					break;
+				}
+				case 0x9: {
+					//confirmed good
+					_ret(cpu);
+					break;
+				}
+				case 0xA: {
+					//confirmed good
+					if (get_flag_on(cpu, Z_FLAG)) {
+						uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+						cpu->pc = immw;
+						cpu->instruction_wait_cycles = 16;
+					} else {
+						cpu->instruction_wait_cycles = 12;
+					}
+						
+					break;
+				}
+				case 0xB: {
+					// cb, should never get here
+					printf("we shouldn't have gotten here (CB)\n");
+					break;
+				}
+				case 0xC: {
+					//confirmed good
+					if (get_flag_on(cpu, Z_FLAG)) {
+						_push(cpu, &cpu->pc);
+						uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+						cpu->pc = immw;
+						cpu->instruction_wait_cycles = 24;
+					} else {
+						cpu->instruction_wait_cycles = 12;
+					}
+
+					break;
+				}
+				case 0xD: {
+					//confirmed good
+					_push(cpu, &cpu->pc);
+					uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+					cpu->pc = immw;
+					break;
+				}
+				case 0xE: {
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+
+					uint16_t val = cpu->a + immb + get_flag_on(cpu, C_FLAG);
+					uint8_t low_nibble_a = cpu->a & 0xf;
+					uint8_t low_nibble_nc = immb & 0xf;
+					set_flag(cpu, H_FLAG, (((low_nibble_a + low_nibble_nc + get_flag_on(cpu, C_FLAG)) & 0x10)) == 0x10);
+					set_flag(cpu, C_FLAG, (val & 0x100) == 0x100);
+					cpu->a = val & 0xff;
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					set_flag(cpu, N_FLAG, 0);
+					break;
+				}
+				case 0xF: {
+					//confirmed good
+					_push(cpu, &cpu->pc);
+					cpu->pc = 0x8;
+					break;
+				}
+			}
+			break;
+		}
+		case 0xD: {
+			switch (n2) {
+				case 0x0: {
+					//confirmed good
+					if (!get_flag_on(cpu, C_FLAG)) {
+						_ret(cpu);
+						cpu->instruction_wait_cycles = 20;
+					} else {
+						cpu->instruction_wait_cycles = 8;
+					}
+					break;
+				}
+				case 0x1: {
+					//confirmed good
+					_pop(cpu, cpu->de);
+					break;
+				}
+				case 0x2: {
+					//confirmed good
+					if (!get_flag_on(cpu, C_FLAG)) {
+						uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+						cpu->pc = immw;
+						cpu->instruction_wait_cycles = 16;
+					} else {
+						cpu->instruction_wait_cycles = 12;
+					}
+
+					break;
+				}
+				case 0x3: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0x4: {
+					//confirmed good
+					if (!get_flag_on(cpu, C_FLAG)) {
+						_push(cpu, &cpu->pc);
+						uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+						cpu->pc = immw;
+						cpu->instruction_wait_cycles = 24;
+					} else {
+						cpu->instruction_wait_cycles = 12;
+					}
+					break;
+				}
+				case 0x5: {
+					//confirmed good
+					_push(cpu, cpu->de);
+					break;
+				}
+				case 0x6: {
+					//confirmed good (flags)
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					uint16_t val = cpu->a - immb;
+
+					set_flag(cpu, C_FLAG, cpu->a < immb);
+					set_flag(cpu, H_FLAG, (((cpu->a & 0xf) - (immb & 0xf)) & 0x10) == 0x10);
+
+					cpu->a = val;
+
+					set_flag(cpu, N_FLAG, 1);
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					break;
+				}
+				case 0x7: {
+					//confirmed good
+					_push(cpu, &cpu->pc);
+					cpu->pc = 0x10;
+					break;
+				}
+				case 0x8: {
+					//confirmed good
+					if (get_flag_on(cpu, C_FLAG)) {
+						_ret(cpu);
+						cpu->instruction_wait_cycles = 20;
+					} else {
+						cpu->instruction_wait_cycles = 8;
+					}
+
+					break;
+				}
+				case 0x9: {
+					//confirmed good
+					cpu->ime = true;
+					_ret(cpu);
+					break;
+				}
+				case 0xA: {
+					//confirmed good
+					if (get_flag_on(cpu, C_FLAG)) {
+						uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+						cpu->pc = immw;
+						cpu->instruction_wait_cycles = 16;
+					} else {
+						cpu->instruction_wait_cycles = 12;
+					}
+					break;
+				}
+				case 0xB: {
+					// nothing
+					break;
+				}
+				case 0xC: {
+					//confirmed good
+					if (get_flag_on(cpu, C_FLAG)) {
+						_push(cpu, &cpu->pc);
+						uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+						cpu->pc = immw;
+						cpu->instruction_wait_cycles = 24;
+					} else {
+						cpu->instruction_wait_cycles = 12;
+					}
+
+					break;
+				}
+				case 0xD: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0xE: {
+				//confirmed good (flags)
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					uint16_t nc = immb + get_flag_on(cpu, C_FLAG);
+					uint16_t val = cpu->a - nc;
+					set_flag(cpu, H_FLAG, (((cpu->a & 0xf) - (immb & 0xf) - get_flag_on(cpu, C_FLAG)) & 0x10) == 0x10);
+					set_flag(cpu, C_FLAG, cpu->a < nc);
+					cpu->a = val & 0xff;
+
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					set_flag(cpu, N_FLAG, 1);
+					break;
+				}
+				case 0xF: {
+					//confirmed good
+					_push(cpu, &cpu->pc);
+					cpu->pc = 0x18;
+					break;
+				}
+			}
+			break;
+		}
+		case 0xE: {
+			switch (n2) {
+				case 0x0: {
+					//confirmed good
+					//attempt_write(cpu, cpu->address_space +  0xFF00 + imm1, &cpu->a);
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					gb_write(cpu, 0xFF00 + immb, cpu->a, 1);
+					break;
+				}
+				case 0x1: {
+					//confirmed good
+					_pop(cpu, cpu->hl);
+					break;
+				}
+				case 0x2: {
+					//confirmed good
+					//attempt_write(cpu, cpu->address_space +  0xFF00 + cpu->c, &cpu->a);
+					gb_write(cpu, 0xFF00 + cpu->c, cpu->a, 1);
+					break;
+				}
+				case 0x3: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0x4: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0x5: {
+					//confirmed good
+					_push(cpu, cpu->hl);
+					break;
+				}
+
+				case 0x6: {
+					// and d8
+					//exit(-1);
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+
+					set_flag(cpu, H_FLAG, 1);
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, C_FLAG, 0);
+					cpu->a &= immb;
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					break;
+				}
+				case 0x7: {
+					_push(cpu, &cpu->pc);
+					cpu->pc = 0x20;
+					break;
+				}
+				case 0x8: {
+					//confirmed good (flags)
+					int8_t simmb = ((instruction & 0x00ff0000) >> 16);
+					uint32_t val = cpu->sp + simmb;
+					if (simmb > 0) {
+						set_flag(cpu, C_FLAG, (((cpu->sp & 0xff) + simmb) & 0x100) == 0x100);
+						set_flag(cpu, H_FLAG, (((cpu->sp & 0xf) + (simmb & 0xf)) & 0x10) == 0x10); 
+					} else {
+						set_flag(cpu, C_FLAG, (val & 0xff) < (cpu->sp & 0xff));
+						set_flag(cpu, H_FLAG, (val & 0xf) < (cpu->sp & 0xf));
+					}
+
+					cpu->sp = val & 0xffff;
+					set_flag(cpu, Z_FLAG, 0);
+					set_flag(cpu, N_FLAG, 0);
+					break;
+				}
+				case 0x9: {
+					//confirmed good
+					cpu->pc = *cpu->hl;
+					break;
+				}
+				case 0xA: {
+					//confirmed good
+					//attempt_write(cpu, (uint8_t *)cpu->address_space +  immw, &cpu->a);
+					uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+					gb_write(cpu, immw, cpu->a, 1);
+					break;
+				}
+				case 0xB: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0xC: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0xD: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0xE: {
+					//confirmed good
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, H_FLAG, 0);
+					set_flag(cpu, C_FLAG, 0);
+
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->a ^= immb;
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					break;
+				}
+				case 0xF: {
+					//confirmed good
+					_push(cpu, &cpu->pc);
+					cpu->pc = 0x28;
+					break;
+				}
+			}
+			break;
+		}
+		case 0xF: {
+			switch (n2) {
+				case 0x0: {
+					//confirmed good
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->a = gb_read(cpu, 0xFF00 + immb);
+					break;
+
+				}
+				case 0x1: {
+					//confirmed good
+					_pop(cpu, cpu->af);
+					break;
+				}
+				case 0x2: {
+					cpu->a = gb_read(cpu, 0xFF00 + cpu->c);
+					break;
+				}
+				case 0x3: {
+					//confirmed good
+					cpu->ime = false;
+					break;
+				}
+				case 0x4: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0x5: {
+					//confirmed good
+					_push(cpu, cpu->af);
+					break;
+				}
+				case 0x6: {
+					// or d8
+					set_flag(cpu, N_FLAG, 0);
+					set_flag(cpu, H_FLAG, 0);
+					set_flag(cpu, C_FLAG, 0);
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					cpu->a |= immb;
+					set_flag(cpu, Z_FLAG, cpu->a == 0);
+					break;
+				}
+				case 0x7: {
+					//confirmed good
+					_push(cpu, &cpu->pc);
+					cpu->pc = 0x30;
+					break;
+				}
+				case 0x8: {
+					int8_t simmb = ((instruction & 0x00ff0000) >> 16);
+					uint32_t val = cpu->sp + simmb;
+
+					if (simmb > 0) {
+						set_flag(cpu, C_FLAG, (((cpu->sp & 0xff) + simmb) & 0x100) == 0x100);
+						set_flag(cpu, H_FLAG, (((cpu->sp & 0xf) + (simmb & 0xf)) & 0x10) == 0x10); 
+					} else {
+						set_flag(cpu, C_FLAG, (val & 0xff) < (cpu->sp & 0xff));
+						set_flag(cpu, H_FLAG, (val & 0xf) < (cpu->sp & 0xf));
+					}
+
+					*cpu->hl = val & 0xffff;
+
+					set_flag(cpu, Z_FLAG, 0);
+					set_flag(cpu, N_FLAG, 0);
+					break;
+				}
+				case 0x9: {
+					//confirmed good
+					cpu->sp = *cpu->hl;
+					break;
+				}
+				case 0xA: {
+					//confirmed good
+					uint16_t immw = ((instruction & 0x00ffff00) >> 8);
+					cpu->a = gb_read(cpu, immw);
+					//cpu->a = cpu->addressSpace[immw];
+					break;
+				}
+				case 0xB: {
+					//confirmed good
+					//cpu->ime = true;
+					queue_task(cpu, QUEUE_INTERRUPT_ENABLE, 0, 1);
+					break;
+				}
+				case 0xC: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0xD: {
+					// nothing
+					bad_instruction(cpu, instruction >> 24);
+					break;
+				}
+				case 0xE: {
+					uint8_t immb = ((instruction & 0x00ff0000) >> 16);
+					set_flag(cpu, H_FLAG, (cpu->a & 0xf) < (immb & 0xf));
+					set_flag(cpu, C_FLAG, cpu->a < immb);
+					set_flag(cpu, Z_FLAG, cpu->a == immb);
+					set_flag(cpu, N_FLAG, 1);
+					break;
+				}
+				case 0xF: {
+					_push(cpu, &cpu->pc);
+					cpu->pc = 0x38;
+					break;
+				}
+			}
+			break;
+		}
+	}*/
