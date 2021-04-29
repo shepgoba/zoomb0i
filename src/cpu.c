@@ -13,6 +13,7 @@ extern void executeee_main_instruction(gb_cpu_t *cpu, uint32_t instruction);
 	an opcode with a variable length cycle count, 
 	which is handled in the instruction implementation instead 
 */
+
 void unmap_bootrom_if_necessary(gb_cpu_t *cpu)
 {
 	static bool unmapped_bootrom = false;
