@@ -51,6 +51,12 @@ static void update_display(gb_cpu_t *cpu, SDL_Texture *display_texture, uint32_t
 #define BACKTRACE_SIZE 0x1000000
 
 int main(int argc, char *argv[]) {
+	const bool load_bootstrap = false;
+	const bool max_speed = false;
+	const double target_frame_rate = 59.7275;
+	const double target_delay_time = 1000 / target_frame_rate;
+
+
 	SDL_Init(SDL_INIT_VIDEO);
 
 	if (argc < 2) {
@@ -78,13 +84,13 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	uint32_t *pixels;
+	uint32_t *pixels = 0;
 
 	gb_cpu_t cpu = {0};
 	gb_ppu_t ppu = {0};
 
 	init_cpu(&cpu, &ppu, load_bootstrap);
-	init_ppu(&ppu, &cpu, pixels);
+	init_ppu(&ppu, &cpu);
 
 	// 64 MB of instr history
 	cpu.backtrace = calloc(BACKTRACE_SIZE, sizeof(uint64_t));

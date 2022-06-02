@@ -3,11 +3,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-const bool load_bootstrap = true;
-const bool max_speed = false;
-const double target_frame_rate = 59.7275;
-const double target_delay_time = 1000 / target_frame_rate;
-
 
 char *assembly_translation[256] = {
 	"nop", "ld bc, d16", "ld (bc), a", "inc bc", "inc b", "dec b", "ld b, d8", "rlca", "ld (a16), sp", "add hl, bc", "ld a, (bc)", "dec bc", "inc c", "dec c", "ld c, d8", "rrca",

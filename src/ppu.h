@@ -30,7 +30,7 @@ struct gb_ppu {
 
 typedef struct gb_ppu gb_ppu_t;
 
-void init_ppu(gb_ppu_t *ppu, struct gb_cpu *cpu, uint32_t *pixels);
+void init_ppu(gb_ppu_t *ppu, struct gb_cpu *cpu);
 void draw_screen(gb_ppu_t *ppu);
 void perform_scanline(gb_ppu_t *ppu, struct gb_cpu *cpu);
 #endif

@@ -11,7 +11,7 @@ CXXFLAGS := -O3
 ROM_FILE = roms\kirbydl.gb
 
 build\zoomb0i.exe: $(OBJ_FILES)
-	$(CC) $(LDFLAGS) -o $@ $^ -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
+	$(CC) $(LDFLAGS) -o $@ $^ -lmingw32 -lSDL2main -lSDL2
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<

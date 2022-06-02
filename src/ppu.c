@@ -4,7 +4,7 @@
 
 extern void _halt();
 
-void init_ppu(gb_ppu_t *ppu, gb_cpu_t *cpu, uint32_t *pixels) {
+void init_ppu(gb_ppu_t *ppu, gb_cpu_t *cpu) {
     ppu->oam = cpu->address_space + 0xFE00;
     ppu->vram = cpu->vram;
 
@@ -40,7 +40,6 @@ void init_ppu(gb_ppu_t *ppu, gb_cpu_t *cpu, uint32_t *pixels) {
         ppu->color_palette[2][2] = 15;
         ppu->color_palette[2][3] = 15;
     }
-    ppu->pixel_buf = pixels;
 }
 
 
