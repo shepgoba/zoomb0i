@@ -35,7 +35,7 @@ static void check_interrupts(gb_cpu_t *cpu)
 }
 
 
-static void update_display(gb_cpu_t *cpu, SDL_Texture *display_texture, uint32_t *pixels) 
+static void update_display(gb_cpu_t *cpu, SDL_Texture *display_texture, uint32_t **pixels) 
 {
 	SDL_UnlockTexture(display_texture);
 
@@ -44,7 +44,7 @@ static void update_display(gb_cpu_t *cpu, SDL_Texture *display_texture, uint32_t
 	SDL_RenderPresent(cpu->ppu->renderer);
 
 	int texture_pitch;
-	SDL_LockTexture(display_texture, NULL, (void **)&pixels, &texture_pitch);
+	SDL_LockTexture(display_texture, NULL, (void **)pixels, &texture_pitch);
 }
 
 
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
 						set_interrupt_flag(&cpu, VBLANK_IFLAG, 1);
 
 						if (screen_on) {
-							update_display(&cpu, texture, pixels);
+							update_display(&cpu, texture, &pixels);
 						}
 
 						vmode = 1;
