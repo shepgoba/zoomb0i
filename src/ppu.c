@@ -1,4 +1,3 @@
-#include <SDL2/SDL.h>
 #include "cpu.h"
 #include "ppu.h"
 
@@ -42,8 +41,6 @@ void init_ppu(gb_ppu_t *ppu, gb_cpu_t *cpu) {
     }
 }
 
-
-
 static inline uint8_t translate_palette_bg(gb_cpu_t *cpu, uint8_t col) {
     return (*cpu->bgp >> col * 2) & 0b00000011;
 }
@@ -69,7 +66,6 @@ uint8_t reverse(uint8_t num) {
                 | ((num & 0x80) >> 7);
     return pog;
 }
-
 
 void draw_window_scanline(gb_ppu_t *ppu, gb_cpu_t *cpu, uint8_t *tile_data) {
     uint8_t *window_tile_map = (*cpu->lcdc >> 6) & 1 ? (uint8_t *)(ppu->vram + 0x1C00) : (uint8_t *)(ppu->vram + 0x1800);
@@ -129,7 +125,6 @@ void perform_scanline(gb_ppu_t *ppu, gb_cpu_t *cpu)
                 base = 0x800;
             }
         }
-        
         uint16_t finalOffset = base + offset * 16 + (((ppu->scanline + *cpu->scy) % 8) * 2);
         uint8_t top = tile_data[finalOffset];
         uint8_t bottom = tile_data[finalOffset + 1];

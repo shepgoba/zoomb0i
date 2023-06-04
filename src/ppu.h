@@ -7,14 +7,12 @@
 #define VISIBLE_SCREEN_WIDTH (INTERNAL_SCREEN_WIDTH*SCALE)
 #define VISIBLE_SCREEN_HEIGHT (INTERNAL_SCREEN_HEIGHT*SCALE)
 
-
-#include <stdio.h>
-#include <math.h>
-#include <SDL2/SDL.h>
 #include "cpu.h"
 #include "utils.h"
 
 struct gb_cpu;
+
+struct SDL_Renderer;
 
 struct gb_ppu {
     uint8_t *vram;
@@ -24,7 +22,7 @@ struct gb_ppu {
     uint8_t mode;
     uint8_t scanline;
     bool during_hblank;
-    SDL_Renderer *renderer;
+    struct SDL_Renderer *renderer;
     //struct gb_cpu *cpu;
 };
 
